@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Telegram240IQ</string>
+    <string name="send_button">Send</string>
+    <string name="choose_chat">Выберите чат</string>
+    <string name="type_a_message">Type a message...</string>
+    <string name="error">Error: %1$s</string>
+    <string name="img_url">https://faerytea.name:8008/%1$s</string>
+    <string name="db_name">chat_database</string>
+</resources>
