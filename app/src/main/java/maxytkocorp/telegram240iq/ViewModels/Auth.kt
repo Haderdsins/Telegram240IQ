@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 import maxytkocorp.telegram240iq.Web.RetrofitInstance
 import maxytkocorp.telegram240iq.Web.SessionManager
 
-class AuthViewModel(private val sessionManager: SessionManager) : ViewModel() {
+class Auth(private val sessionManager: SessionManager) : ViewModel() {
 
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
     val authState = _authState.asStateFlow()

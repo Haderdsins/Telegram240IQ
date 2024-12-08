@@ -14,7 +14,7 @@ import maxytkocorp.telegram240iq.Models.MessageData
 import maxytkocorp.telegram240iq.Web.RetrofitInstance
 import maxytkocorp.telegram240iq.Web.SessionManager
 
-class MainViewModel(
+class Main(
     private val sessionManager: SessionManager,
     private val chatRepository: ChatRepository,
 ) : ViewModel() {

@@ -7,24 +7,24 @@ import androidx.room.RoomDatabase
 import maxytkocorp.telegram240iq.R
 
 @Database(entities = [MessageEntity::class, ChatEntity::class], version = 1)
-abstract class AppDatabase : RoomDatabase() {
+abstract class AppDB : RoomDatabase() {
     abstract fun chatDao(): ChatDao
     abstract fun messageDao(): MessageDao
 
     companion object {
         @Volatile
-        private var INSTANCE: AppDatabase? = null
+        private var INSTANCE: AppDB? = null
 
-        fun getInstance(context: Context): AppDatabase {
+        fun getInstance(context: Context): AppDB {
             return INSTANCE ?: createInstance(context).also {
                 INSTANCE = it
             }
         }
 
-        private fun createInstance(context: Context): AppDatabase {
+        private fun createInstance(context: Context): AppDB {
             return Room.databaseBuilder(
                 context.applicationContext,
-                AppDatabase::class.java,
+                AppDB::class.java,
                 context.getString(R.string.db_name)
             ).build()
         }

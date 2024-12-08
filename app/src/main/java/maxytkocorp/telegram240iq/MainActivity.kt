@@ -48,13 +48,13 @@ import coil.compose.AsyncImage
 import maxytkocorp.telegram240iq.Models.Chat
 import maxytkocorp.telegram240iq.Models.Message
 import maxytkocorp.telegram240iq.Models.MessageData
-import maxytkocorp.telegram240iq.ViewModels.AuthViewModel
-import maxytkocorp.telegram240iq.ViewModels.AuthViewModelFactory
-import maxytkocorp.telegram240iq.ViewModels.MainViewModel
-import maxytkocorp.telegram240iq.ViewModels.MainViewModelFactory
+import maxytkocorp.telegram240iq.ViewModels.Auth
+import maxytkocorp.telegram240iq.ViewModels.AuthFactory
+import maxytkocorp.telegram240iq.ViewModels.Main
+import maxytkocorp.telegram240iq.ViewModels.MainFactory
 import maxytkocorp.telegram240iq.Web.RetrofitInstance
 import maxytkocorp.telegram240iq.Web.SessionManager
-import maxytkocorp.telegram240iq.dal.AppDatabase
+import maxytkocorp.telegram240iq.dal.AppDB
 import maxytkocorp.telegram240iq.ui.theme.Telegram240IQTheme
 
 class MainActivity : ComponentActivity() {
@@ -66,27 +66,27 @@ class MainActivity : ComponentActivity() {
 
         sessionManager = SessionManager(this)
 
-        val database = AppDatabase.getInstance(this)
+        val database = AppDB.getInstance(this)
         val chatDao = database.chatDao()
         val messageDao = database.messageDao()
         val apiService = RetrofitInstance.apiService
 
         val chatRepository = ChatRepository(chatDao, messageDao, apiService)
 
-        val authViewModel = ViewModelProvider(
+        val auth = ViewModelProvider(
             this,
-            AuthViewModelFactory(sessionManager)
-        ).get(AuthViewModel::class.java)
+            AuthFactory(sessionManager)
+        ).get(Auth::class.java)
 
-        val mainViewModel = ViewModelProvider(
+        val main = ViewModelProvider(
             this,
-            MainViewModelFactory(sessionManager, chatRepository)
-        ).get(MainViewModel::class.java)
+            MainFactory(sessionManager, chatRepository)
+        ).get(Main::class.java)
 
         setContent {
             Telegram240IQTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    AppScreen(authViewModel, mainViewModel)
+                    AppScreen(auth, main)
                 }
             }
         }
@@ -94,23 +94,23 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun AppScreen(authViewModel: AuthViewModel, mainViewModel: MainViewModel) {
-    val authState by authViewModel.authState.collectAsState()
+fun AppScreen(auth: Auth, main: Main) {
+    val authState by auth.authState.collectAsState()
 
     when (authState) {
-        is AuthViewModel.AuthState.LoggedIn -> {
-            MainScreen(mainViewModel)
+        is Auth.AuthState.LoggedIn -> {
+            MainScreen(main)
         }
 
         else -> {
-            AuthScreen(authViewModel)
+            AuthScreen(auth)
         }
     }
 }
 
 @Composable
-fun AuthScreen(authViewModel: AuthViewModel) {
-    val authState by authViewModel.authState.collectAsState()
+fun AuthScreen(auth: Auth) {
+    val authState by auth.authState.collectAsState()
 
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -137,19 +137,19 @@ fun AuthScreen(authViewModel: AuthViewModel) {
         )
         Spacer(modifier = Modifier.height(16.dp))
         Row(horizontalArrangement = Arrangement.SpaceBetween) {
-            Button(onClick = { authViewModel.register(username) }) {
+            Button(onClick = { auth.register(username) }) {
                 Text("Register")
             }
             Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = { authViewModel.login(username, password) }) {
+            Button(onClick = { auth.login(username, password) }) {
                 Text("Login")
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
         when (authState) {
-            is AuthViewModel.AuthState.Registered -> Text("Registered! Password: ${(authState as AuthViewModel.AuthState.Registered).password}")
-            is AuthViewModel.AuthState.LoggedIn -> Text("Logged in! Token: ${(authState as AuthViewModel.AuthState.LoggedIn).token}")
-            is AuthViewModel.AuthState.Error -> Text("Error: ${(authState as AuthViewModel.AuthState.Error).message}")
+            is Auth.AuthState.Registered -> Text("Registered! Password: ${(authState as Auth.AuthState.Registered).password}")
+            is Auth.AuthState.LoggedIn -> Text("Logged in! Token: ${(authState as Auth.AuthState.LoggedIn).token}")
+            is Auth.AuthState.Error -> Text("Error: ${(authState as Auth.AuthState.Error).message}")
             else -> {}
         }
     }
@@ -157,24 +157,24 @@ fun AuthScreen(authViewModel: AuthViewModel) {
 
 @Composable
 fun MainScreen(
-    mainViewModel: MainViewModel,
+    main: Main,
 ) {
-    val state by mainViewModel.state.collectAsState()
-    val selectedChatOrChannel by mainViewModel.selectedChatOrChannel.collectAsState()
-    val messages by mainViewModel.messages.collectAsState()
+    val state by main.state.collectAsState()
+    val selectedChatOrChannel by main.selectedChatOrChannel.collectAsState()
+    val messages by main.messages.collectAsState()
 
     LaunchedEffect(Unit) {
-        mainViewModel.loadChats()
+        main.loadChats()
     }
 
     BackHandler {
         when {
             selectedChatOrChannel != null -> {
-                mainViewModel.selectChat(null)
+                main.selectChat(null)
             }
 
             else -> {
-                mainViewModel.logout()
+                main.logout()
             }
         }
     }
@@ -187,7 +187,7 @@ fun MainScreen(
             Box(modifier = Modifier.weight(1f)) {
                 ChatListWithTonButton(
                     state = state,
-                    onChatSelected = { mainViewModel.selectChat(it) }
+                    onChatSelected = { main.selectChat(it) }
                 )
             }
             Box(modifier = Modifier.weight(2f)) {
@@ -195,13 +195,13 @@ fun MainScreen(
                     val chatOrChannel = selectedChatOrChannel!!
                     ChatDetailScreen(
                         chat = chatOrChannel,
-                        onBack = { mainViewModel.selectChat(null) },
+                        onBack = { main.selectChat(null) },
                         messages = messages,
                         onSendMessage = { message ->
-                            mainViewModel.sendMessage(chatOrChannel.name, message)
+                            main.sendMessage(chatOrChannel.name, message)
                         },
                         onLoadMoreMessages = {
-                            mainViewModel.loadMoreMessages(chatOrChannel)
+                            main.loadMoreMessages(chatOrChannel)
                         }
                     )
                 } else {
@@ -220,19 +220,19 @@ fun MainScreen(
             if (selectedChatOrChannel == null) {
                 ChatListWithTonButton(
                     state = state,
-                    onChatSelected = { mainViewModel.selectChat(it) }
+                    onChatSelected = { main.selectChat(it) }
                 )
             } else {
                 val chatOrChannel = selectedChatOrChannel!!
                 ChatDetailScreen(
                     chat = chatOrChannel,
-                    onBack = { mainViewModel.selectChat(null) },
+                    onBack = { main.selectChat(null) },
                     messages = messages,
                     onSendMessage = { message ->
-                        mainViewModel.sendMessage(chatOrChannel.name, message)
+                        main.sendMessage(chatOrChannel.name, message)
                     },
                     onLoadMoreMessages = {
-                        mainViewModel.loadMoreMessages(chatOrChannel)
+                        main.loadMoreMessages(chatOrChannel)
                     }
                 )
             }
@@ -286,15 +286,15 @@ fun CustomLoadingSpinner() {
 
 @Composable
 fun ChatList(
-    state: MainViewModel.MainScreenState,
+    state: Main.MainScreenState,
     onChatSelected: (Chat) -> Unit,
 ) {
     when (state) {
-        is MainViewModel.MainScreenState.Loading -> {
+        is Main.MainScreenState.Loading -> {
             CustomLoadingSpinner()
         }
 
-        is MainViewModel.MainScreenState.Success -> {
+        is Main.MainScreenState.Success -> {
             val items = state.chatsAndChannels
             LazyColumn {
                 items(items) { item ->
@@ -321,7 +321,7 @@ fun ChatList(
             }
         }
 
-        is MainViewModel.MainScreenState.Error -> {
+        is Main.MainScreenState.Error -> {
             Text(
                 stringResource(R.string.error, state.message),
                 modifier = Modifier.fillMaxSize(),
@@ -333,7 +333,7 @@ fun ChatList(
 
 @Composable
 fun ChatListWithTonButton(
-    state: MainViewModel.MainScreenState,
+    state: Main.MainScreenState,
     onChatSelected: (Chat) -> Unit,
 ) {
 
@@ -357,11 +357,11 @@ fun ChatListWithTonButton(
         }
 
         when (state) {
-            is MainViewModel.MainScreenState.Loading -> {
+            is Main.MainScreenState.Loading -> {
                 CustomLoadingSpinner()
             }
 
-            is MainViewModel.MainScreenState.Success -> {
+            is Main.MainScreenState.Success -> {
                 val items = state.chatsAndChannels
                 LazyColumn(modifier = Modifier.weight(1f)) {
                     items(items) { item ->
@@ -390,7 +390,7 @@ fun ChatListWithTonButton(
                 }
             }
 
-            is MainViewModel.MainScreenState.Error -> {
+            is Main.MainScreenState.Error -> {
                 Text(
                     text = stringResource(R.string.error, state.message),
                     modifier = Modifier.fillMaxSize(),

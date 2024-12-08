@@ -4,7 +4,7 @@ import com.squareup.moshi.FromJson
 import com.squareup.moshi.ToJson
 import maxytkocorp.telegram240iq.Models.MessageData
 
-class MessageDataAdapter {
+class DataAdapter {
 
     @FromJson
     fun fromJson(json: Map<String, Map<String, String>>): MessageData {

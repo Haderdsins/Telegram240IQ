@@ -14,7 +14,7 @@ import javax.net.ssl.X509TrustManager
 object RetrofitInstance {
     private const val BASE_URL = "https://faerytea.name:8008/"
 
-    private val moshi = Moshi.Builder().add(MessageDataAdapter()).add(KotlinJsonAdapterFactory())
+    private val moshi = Moshi.Builder().add(DataAdapter()).add(KotlinJsonAdapterFactory())
         .build()
 
     private val trustAllCertificates: TrustManager = object : X509TrustManager {
