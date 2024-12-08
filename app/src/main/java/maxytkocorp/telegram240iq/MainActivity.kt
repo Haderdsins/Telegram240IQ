@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.window.Dialog
@@ -184,7 +185,7 @@ fun MainScreen(
     if (isLandscape) {
         Row(modifier = Modifier.fillMaxSize()) {
             Box(modifier = Modifier.weight(1f)) {
-                ChatList(
+                ChatListWithTonButton(
                     state = state,
                     onChatSelected = { mainViewModel.selectChat(it) }
                 )
@@ -217,7 +218,7 @@ fun MainScreen(
     } else {
         Box(modifier = Modifier.fillMaxSize()) {
             if (selectedChatOrChannel == null) {
-                ChatList(
+                ChatListWithTonButton(
                     state = state,
                     onChatSelected = { mainViewModel.selectChat(it) }
                 )
@@ -239,6 +240,7 @@ fun MainScreen(
     }
 }
 
+
 @Composable
 fun CustomLoadingSpinner() {
     var rotationAngle by remember { mutableFloatStateOf(0f) }
@@ -255,22 +257,18 @@ fun CustomLoadingSpinner() {
     )
 
     Canvas(modifier = Modifier.size(500.dp), onDraw = {
-        // Center of the canvas
         val center = this.center
 
-        // Calculate the star path with a much larger size
         val starPath = Path().apply {
-            moveTo(center.x, center.y - 100f) // Top point of the star (increased size)
-            lineTo(center.x + 60f, center.y + 60f) // Right bottom point of the star
-            lineTo(center.x - 120f, center.y - 60f) // Left top point of the star
-            lineTo(center.x + 120f, center.y - 60f) // Right top point of the star
-            lineTo(center.x - 60f, center.y + 60f) // Left bottom point of the star
-            close() // Closing the star path
+            moveTo(center.x, center.y - 100f)
+            lineTo(center.x + 60f, center.y + 60f)
+            lineTo(center.x - 120f, center.y - 60f)
+            lineTo(center.x + 120f, center.y - 60f)
+            lineTo(center.x - 60f, center.y + 60f)
+            close()
         }
 
-        // Apply rotation transformation
         rotate(rotation) {
-            // Adding a gradient fill effect to the star for visual enhancement
             drawPath(
                 path = starPath, brush = Brush.linearGradient(
                     colors = listOf(Color.Blue, Color.Cyan),
@@ -281,7 +279,6 @@ fun CustomLoadingSpinner() {
             )
         }
 
-        // Adding an effect for glow around the star using the shadow
         drawPath(path = starPath, color = Color.Cyan.copy(alpha = 0.5f), style = Fill)
     })
 }
@@ -301,19 +298,110 @@ fun ChatList(
             val items = state.chatsAndChannels
             LazyColumn {
                 items(items) { item ->
-                    ListItem(
-                        modifier = Modifier.clickable { onChatSelected(item) },
-                        headlineContent = { Text(item.name) }
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onChatSelected(item) }
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.chat),
+                            contentDescription = "Chat Icon",
+                            modifier = Modifier
+                                .size(24.dp)
+                                .padding(end = 8.dp) // Отступ справа от иконки
+                        )
+                        Text(
+                            text = item.name,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
             }
         }
 
         is MainViewModel.MainScreenState.Error -> {
-            Text(stringResource(R.string.error, state.message), modifier = Modifier.fillMaxSize())
+            Text(
+                stringResource(R.string.error, state.message),
+                modifier = Modifier.fillMaxSize(),
+                style = MaterialTheme.typography.bodyMedium
+            )
         }
     }
 }
+
+@Composable
+fun ChatListWithTonButton(
+    state: MainViewModel.MainScreenState,
+    onChatSelected: (Chat) -> Unit,
+) {
+
+    var tonCount by remember { mutableStateOf(0) }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "TON: $tonCount",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f)
+            )
+            Button(onClick = { tonCount++ }) {
+                Text(text = "Add TON")
+            }
+        }
+
+        when (state) {
+            is MainViewModel.MainScreenState.Loading -> {
+                CustomLoadingSpinner()
+            }
+
+            is MainViewModel.MainScreenState.Success -> {
+                val items = state.chatsAndChannels
+                LazyColumn(modifier = Modifier.weight(1f)) {
+                    items(items) { item ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onChatSelected(item) }
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.chat),
+                                contentDescription = "Chat Icon",
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .padding(end = 8.dp)
+                            )
+
+                            Text(
+                                text = item.name,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+            }
+
+            is MainViewModel.MainScreenState.Error -> {
+                Text(
+                    text = stringResource(R.string.error, state.message),
+                    modifier = Modifier.fillMaxSize(),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
+    }
+}
+
+
 
 @Composable
 fun ChatDetailScreen(

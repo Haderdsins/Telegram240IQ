@@ -28,7 +28,6 @@ class AuthViewModel(private val sessionManager: SessionManager) : ViewModel() {
                 _authState.value = AuthState.Idle
             }
 
-            // Subscribe to changes in token and username
             sessionManager.token.combine(sessionManager.username) { token, username ->
                 token to username
             }.collect { (token, username) ->
